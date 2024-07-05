@@ -2,13 +2,15 @@
 from googleapiclient.discovery import build
 import pandas as pd
 import re
+import requests
+from PIL import Image
+from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
 
 # Replace with API key
-api_key = 'Insert API Key here'
+api_key = 'AIzaSyBGNB5GlndfRcWG4_iRIzQEPrUiyT34Mkw'
 
 # Create a YouTube API client
 youtube = build('youtube', 'v3', developerKey=api_key)
@@ -67,8 +69,16 @@ def get_video_comments(youtube, video_id):
             break
     return comments
 
+# Capture thumbnail image
+def get_thumbnail_image(youtube, video_id):
+    video_details = get_video_details(youtube, video_id)
+    thumbnail_url = video_details['items'][0]['snippet']['thumbnails']['high']['url']
+    response = requests.get(thumbnail_url)
+    img = Image.open(BytesIO(response.content))
+    return img
+
 # generate PDF
-def generate_pdf(channel_info, video_info, comments, output_path):
+def generate_pdf(channel_info, video_info, comments, thumbnail_image, output_path):
     c = canvas.Canvas(output_path, pagesize=letter)
     width, height = letter
     styles = getSampleStyleSheet()
@@ -93,6 +103,14 @@ def generate_pdf(channel_info, video_info, comments, output_path):
     for key, value in video_info.items():
         c.drawString(72, y_position, f"{key.capitalize()}: {value}")
         y_position -= 20
+
+    # Add thumbnail image
+    if thumbnail_image:
+        y_position -= 200  # Space for the image
+        thumbnail_path = "/tmp/thumbnail.jpg"
+        thumbnail_image.save(thumbnail_path)
+        c.drawImage(thumbnail_path, 72, y_position, width=200, height=150)
+        y_position -= 160  # Adjust space after the image
 
     # Add comments
     c.setFont("Helvetica-Bold", 16)
@@ -147,6 +165,9 @@ def capture_youtube_data(video_url):
 
     # Get comments for the video
     comments = get_video_comments(youtube, video_id)
+
+    # Get thumbnail image for the video
+    thumbnail_image = get_thumbnail_image(youtube, video_id)
     
     # Save data to DataFrame
     output_directory = '/Users/moiz/Desktop/Youtube/Hannah Likes'
@@ -161,7 +182,7 @@ def capture_youtube_data(video_url):
     # Generate PDF
     pdf_name = input("Enter output pdf name: ")
     pdf_path = f'{output_directory}/{pdf_name}youtube_data.pdf'
-    generate_pdf(channel_info, video_info, comments, pdf_path)
+    generate_pdf(channel_info, video_info, comments, thumbnail_image, pdf_path)
     
     print(f"Channel information, video details, comments, and PDF report have been saved to {output_directory}")
 
