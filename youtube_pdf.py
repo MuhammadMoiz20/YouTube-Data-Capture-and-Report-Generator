@@ -10,7 +10,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet
 
 # Replace with API key
-api_key = 'AIzaSyBGNB5GlndfRcWG4_iRIzQEPrUiyT34Mkw'
+api_key = 'Insert API Key here'
 
 # Create a YouTube API client
 youtube = build('youtube', 'v3', developerKey=api_key)
